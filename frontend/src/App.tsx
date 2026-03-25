@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import './App.css';
-import HealthCheck from './components/HealthCheck';
+import "./App.css";
+import HealthCheck from "./components/HealthCheck";
+import Home from "./components/Home";
 
 function App() {
   return (
     <div className="App">
-      <h1>Job Tracker Application</h1>
+      <h1>CareerFlow</h1>
+      <Home />
       <HealthCheck />
     </div>
   );
