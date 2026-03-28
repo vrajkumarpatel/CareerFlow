@@ -9,15 +9,28 @@ interface JobCardProps {
     name: string;
   };
   location: string;
-  type: string;
+  job_type: string;
   description: string;
-  postedTime: string;
+  posted_at: string;
   isSaved: boolean;
   onSaveToggle: (jobId: string, isSaved: boolean) => void;
 }
 
-export function JobCard({ id, title, company, location, type, description, postedTime, isSaved, onSaveToggle }: JobCardProps) {
+export function JobCard({ id, title, company, location, job_type, description, posted_at, isSaved, onSaveToggle }: JobCardProps) {
   const navigate = useNavigate();
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    return date.toLocaleDateString();
+  };
 
   const handleSave = async () => {
     const token = localStorage.getItem("token");
@@ -52,7 +65,7 @@ export function JobCard({ id, title, company, location, type, description, poste
         </div>
         <div className="flex items-center gap-2">
           <span className="bg-accent text-accent-foreground px-3 py-1 rounded-full text-sm whitespace-nowrap">
-            {type}
+            {job_type}
           </span>
           <button onClick={handleSave} className="p-2 rounded-lg hover:bg-accent">
             <Bookmark className={`w-5 h-5 text-muted-foreground ${isSaved ? "fill-current text-primary" : ""}`} />
@@ -67,7 +80,7 @@ export function JobCard({ id, title, company, location, type, description, poste
         </div>
         <div className="flex items-center gap-1">
           <Clock className="w-4 h-4" />
-          {postedTime}
+          {formatDate(posted_at)}
         </div>
       </div>
       

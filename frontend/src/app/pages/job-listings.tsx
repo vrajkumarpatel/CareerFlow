@@ -20,14 +20,16 @@ export function JobListings() {
   useEffect(() => {
     const fetchJobsAndSavedJobs = async () => {
       try {
-        // Fetch all job listings
+        // Fetch all job listings with pagination
         let allJobs = [];
-        let url = "/jobs/";
-        while (url) {
-          const response = await apiClient.get(url);
+        let nextUrl = "/jobs/"; // Start with first page
+        
+        while (nextUrl) {
+          const response = await apiClient.get(nextUrl);
           allJobs = allJobs.concat(response.data.results);
-          url = response.data.next;
+          nextUrl = response.data.next;
         }
+        
         setJobs(allJobs);
 
         // Fetch user's saved jobs if logged in
@@ -61,11 +63,15 @@ export function JobListings() {
 
   // Filter jobs
   const filteredJobs = jobs.filter((job) => {
-    const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         job.company.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesLocation = selectedLocation === "all" || job.location.includes(selectedLocation);
-    const matchesType = selectedType === "all" || job.type === selectedType;
-    const matchesExperience = selectedExperience === "all" || job.experience === selectedExperience;
+    const matchesSearch =
+      (job.title &&
+        job.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (job.company &&
+        job.company.name &&
+        job.company.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesLocation = selectedLocation === "all" || (job.location && job.location.includes(selectedLocation));
+    const matchesType = selectedType === "all" || (job.job_type && job.job_type === selectedType);
+    const matchesExperience = selectedExperience === "all" || (job.experience && job.experience === selectedExperience);
     
     return matchesSearch && matchesLocation && matchesType && matchesExperience;
   });

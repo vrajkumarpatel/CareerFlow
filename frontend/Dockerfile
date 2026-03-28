@@ -1,12 +1,12 @@
-FROM node:20-alpine
+FROM node:20
 
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY package.json ./
 
 # Install dependencies
-RUN npm install --also=dev
+RUN npm install
 
 # Copy project files
 COPY . .
