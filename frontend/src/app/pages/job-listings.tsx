@@ -15,30 +15,23 @@ export function JobListings() {
   const [selectedType, setSelectedType] = useState("all");
   const [selectedExperience, setSelectedExperience] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 6;
 
   useEffect(() => {
-    const fetchJobsAndSavedJobs = async () => {
+    const fetchJobs = async () => {
       try {
-        // Fetch all job listings with pagination
-        let allJobs = [];
-        let nextUrl = "/jobs/"; // Start with first page
-        
-        while (nextUrl) {
-          const response = await apiClient.get(nextUrl);
-          allJobs = allJobs.concat(response.data.results);
-          nextUrl = response.data.next;
-        }
-        
-        setJobs(allJobs);
-
-        // Fetch user's saved jobs if logged in
-        const token = localStorage.getItem("token");
-        if (token) {
-          const savedJobsResponse = await apiClient.get("/saved-jobs/", { headers: { Authorization: `Bearer ${token}` } });
-          const savedIds = new Set(savedJobsResponse.data.map((job: any) => job.job_posting.id));
-          setSavedJobIds(savedIds);
-        }
+        setLoading(true);
+        const params = {
+          page: currentPage,
+          search: searchQuery,
+          location: selectedLocation === "all" ? "" : selectedLocation,
+          job_type: selectedType === "all" ? "" : selectedType,
+          experience: selectedExperience === "all" ? "" : selectedExperience,
+        };
+        const response = await apiClient.get("/jobs/", { params });
+        setJobs(response.data.results);
+        setTotalPages(Math.ceil(response.data.count / itemsPerPage));
       } catch (err) {
         setError(err);
       } finally {
@@ -46,8 +39,22 @@ export function JobListings() {
       }
     };
 
-    fetchJobsAndSavedJobs();
-  }, []);
+    const fetchSavedJobs = async () => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        try {
+          const savedJobsResponse = await apiClient.get("/saved-jobs/", { headers: { Authorization: `Bearer ${token}` } });
+          const savedIds = new Set(savedJobsResponse.data.map((job: any) => job.job_posting.id));
+          setSavedJobIds(savedIds);
+        } catch (err) {
+          console.error("Failed to fetch saved jobs", err);
+        }
+      }
+    };
+
+    fetchJobs();
+    fetchSavedJobs();
+  }, [currentPage, searchQuery, selectedLocation, selectedType, selectedExperience]);
 
   const handleSaveToggle = (jobId: string, isSaved: boolean) => {
     if (isSaved) {
@@ -60,26 +67,7 @@ export function JobListings() {
       setSavedJobIds(newSavedIds);
     }
   };
-
-  // Filter jobs
-  const filteredJobs = jobs.filter((job) => {
-    const matchesSearch =
-      (job.title &&
-        job.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (job.company &&
-        job.company.name &&
-        job.company.name.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesLocation = selectedLocation === "all" || (job.location && job.location.includes(selectedLocation));
-    const matchesType = selectedType === "all" || (job.job_type && job.job_type === selectedType);
-    const matchesExperience = selectedExperience === "all" || (job.experience && job.experience === selectedExperience);
-    
-    return matchesSearch && matchesLocation && matchesType && matchesExperience;
-  });
-
-  // Pagination
-  const totalPages = Math.ceil(filteredJobs.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedJobs = filteredJobs.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedJobs = jobs;
 
   if (loading) {
     return <div>Loading...</div>;
@@ -194,7 +182,7 @@ export function JobListings() {
           {/* Job Listings */}
           <div className="lg:col-span-3">
             <div className="mb-4 text-sm text-muted-foreground">
-              Showing {paginatedJobs.length} of {filteredJobs.length} jobs
+              Showing {paginatedJobs.length} of {jobs.length} jobs
             </div>
             
             <div className="grid grid-cols-1 gap-6 mb-8">
@@ -208,7 +196,7 @@ export function JobListings() {
               ))}
             </div>
 
-            {filteredJobs.length === 0 && (
+            {jobs.length === 0 && !loading && (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">No jobs found matching your criteria.</p>
               </div>
