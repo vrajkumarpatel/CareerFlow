@@ -17,7 +17,6 @@ interface JobCardProps {
 }
 
 export function JobCard({ id, title, company, location, job_type, description, posted_at, isSaved, onSaveToggle }: JobCardProps) {
-  const navigate = useNavigate();
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -32,42 +31,28 @@ export function JobCard({ id, title, company, location, job_type, description, p
     return date.toLocaleDateString();
   };
 
-  const handleSave = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
-    try {
-      if (isSaved) {
-        // Unsave logic - requires savedJob id, which we don't have here.
-        // This is a limitation of the current implementation.
-        // A better approach would be to fetch the savedJob id along with the job data.
-        // For now, we'll just update the local state.
-      } else {
-        await apiClient.post("/saved-jobs/", { job_posting_id: id }, { headers: { Authorization: `Bearer ${token}` } });
-      }
-      onSaveToggle(id, isSaved);
-    } catch (error) {
-      console.error("Error saving job:", error);
-    }
+  const handleSaveClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); 
+    e.preventDefault(); 
+    onSaveToggle(id, isSaved);
   };
 
   return (
     <div className="bg-card rounded-xl border border-border p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
-          <h3 className="text-xl font-semibold text-foreground mb-2 hover:text-primary transition-colors">
-            {title}
-          </h3>
+          <Link to={`/jobs/${id}`} className="block">
+            <h3 className="text-xl font-semibold text-foreground mb-2 hover:text-primary transition-colors">
+              {title}
+            </h3>
+          </Link>
           <p className="text-muted-foreground font-medium mb-3">{company.name}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="relative flex items-center gap-2">
           <span className="bg-accent text-accent-foreground px-3 py-1 rounded-full text-sm whitespace-nowrap">
             {job_type}
           </span>
-          <button onClick={handleSave} className="p-2 rounded-lg hover:bg-accent">
+          <button onClick={handleSaveClick} className="relative z-10 p-2 rounded-lg hover:bg-accent">
             <Bookmark className={`w-5 h-5 text-muted-foreground ${isSaved ? "fill-current text-primary" : ""}`} />
           </button>
         </div>
@@ -88,13 +73,12 @@ export function JobCard({ id, title, company, location, job_type, description, p
         {description}
       </p>
       
-      <Link 
-        to={`/jobs/${id}`}
-        className="inline-flex items-center gap-2 text-primary hover:text-blue-700 transition-colors group"
-      >
-        View Details
-        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-      </Link>
+      <div className="mt-6">
+        <Link to={`/jobs/${id}`} className="inline-flex items-center gap-2 text-primary hover:text-blue-700 transition-colors group">
+          View Details
+          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+        </Link>
+      </div>
     </div>
   );
 }

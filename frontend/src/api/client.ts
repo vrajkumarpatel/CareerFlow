@@ -4,17 +4,18 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000
 
 const apiClient = axios.create({
   baseURL: `${API_BASE_URL}/api`,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
-// Request interceptor to add JWT token
+// Request interceptor to add JWT token and optional Gemini API key
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    const geminiKey = localStorage.getItem('gemini_api_key');
+    if (geminiKey) {
+      config.headers['X-Gemini-Api-Key'] = geminiKey;
     }
     return config;
   },

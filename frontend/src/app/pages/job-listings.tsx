@@ -7,6 +7,7 @@ import apiClient from "../../api/client";
 
 export function JobListings() {
   const [jobs, setJobs] = useState([]);
+  const [totalJobs, setTotalJobs] = useState(0);
   const [savedJobIds, setSavedJobIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -30,10 +31,17 @@ export function JobListings() {
           experience: selectedExperience === "all" ? "" : selectedExperience,
         };
         const response = await apiClient.get("/jobs/", { params });
-        setJobs(response.data.results);
-        setTotalPages(Math.ceil(response.data.count / itemsPerPage));
+
+        if (response.data && Array.isArray(response.data.results)) {
+          setJobs(response.data.results);
+          setTotalJobs(response.data.count);
+          setTotalPages(Math.ceil(response.data.count / itemsPerPage));
+        } else {
+          setJobs([]);
+          console.error("API returned unexpected data structure:", response.data);
+        }
       } catch (err) {
-        setError(err);
+        setError(err as any);
       } finally {
         setLoading(false);
       }
@@ -43,11 +51,17 @@ export function JobListings() {
       const token = localStorage.getItem("token");
       if (token) {
         try {
-          const savedJobsResponse = await apiClient.get("/saved-jobs/", { headers: { Authorization: `Bearer ${token}` } });
-          const savedIds = new Set(savedJobsResponse.data.map((job: any) => job.job_posting.id));
-          setSavedJobIds(savedIds);
+          const savedJobsResponse = await apiClient.get("/saved-jobs/");
+          const results = savedJobsResponse.data?.results ?? savedJobsResponse.data;
+          if (Array.isArray(results)) {
+            const savedIds = new Set(results.map((job: any) => job.job_posting.id));
+            setSavedJobIds(savedIds);
+          } else {
+            setSavedJobIds(new Set());
+          }
         } catch (err) {
           console.error("Failed to fetch saved jobs", err);
+          setSavedJobIds(new Set());
         }
       }
     };
@@ -56,17 +70,46 @@ export function JobListings() {
     fetchSavedJobs();
   }, [currentPage, searchQuery, selectedLocation, selectedType, selectedExperience]);
 
-  const handleSaveToggle = (jobId: string, isSaved: boolean) => {
+  const handleSaveToggle = (jobId: any, isSaved: boolean) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
     if (isSaved) {
-      const newSavedIds = new Set(savedJobIds);
-      newSavedIds.delete(jobId);
-      setSavedJobIds(newSavedIds);
+      console.log("Attempting to unsave job with posting ID:", jobId);
+      apiClient.get("/saved-jobs/")
+        .then(response => {
+          const results = response.data?.results ?? response.data;
+          const savedJob = results.find((job: any) => job.job_posting.id === jobId);
+          if (savedJob) {
+            console.log("Found saved job with ID:", savedJob.id, "- sending delete request.");
+            return apiClient.delete(`/saved-jobs/${savedJob.id}/`);
+          }
+          throw new Error("Could not find saved job to delete.");
+        })
+        .then(() => {
+          console.log("Successfully unsaved job with posting ID:", jobId);
+          const newSavedIds = new Set(savedJobIds);
+          newSavedIds.delete(jobId);
+          setSavedJobIds(newSavedIds);
+        })
+        .catch(err => {
+          console.error("Error during unsave process:", err.response?.data || err.message);
+        });
     } else {
-      const newSavedIds = new Set(savedJobIds);
-      newSavedIds.add(jobId);
-      setSavedJobIds(newSavedIds);
+      console.log("Attempting to save job with posting ID:", jobId);
+      apiClient.post("/saved-jobs/", { job_posting_id: jobId })
+        .then(response => {
+          console.log("Successfully saved job:", response.data);
+          const newSavedIds = new Set(savedJobIds);
+          newSavedIds.add(response.data.job_posting.id);
+          setSavedJobIds(newSavedIds);
+        })
+        .catch(err => {
+          console.error("Error during save process:", err.response?.data || err.message);
+        });
     }
   };
+
   const paginatedJobs = jobs;
 
   if (loading) {
@@ -74,7 +117,7 @@ export function JobListings() {
   }
 
   if (error) {
-    return <div>Error: {error.message}</div>;
+    return <div>Error: {(error as any).message}</div>;
   }
 
   return (
@@ -86,7 +129,7 @@ export function JobListings() {
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">Find Your Perfect Job</h1>
           <p className="text-muted-foreground">
-            Browse through {jobs.length} open positions
+            Browse through {totalJobs} open positions
           </p>
         </div>
 
@@ -180,18 +223,18 @@ export function JobListings() {
           </aside>
 
           {/* Job Listings */}
-          <div className="lg:col-span-3">
+          <main className="lg:col-span-3">
             <div className="mb-4 text-sm text-muted-foreground">
-              Showing {paginatedJobs.length} of {jobs.length} jobs
+              Showing {paginatedJobs.length} of {totalJobs} jobs
             </div>
             
             <div className="grid grid-cols-1 gap-6 mb-8">
-              {paginatedJobs.map((job) => (
+              {paginatedJobs.map((job: any) => (
                 <JobCard 
                   key={job.id} 
                   {...job} 
                   isSaved={savedJobIds.has(job.id)}
-                  onSaveToggle={handleSaveToggle}
+                  onSaveToggle={() => handleSaveToggle(job.id, savedJobIds.has(job.id))}
                 />
               ))}
             </div>
@@ -238,7 +281,7 @@ export function JobListings() {
                 </button>
               </div>
             )}
-          </div>
+          </main>
         </div>
       </div>
 
