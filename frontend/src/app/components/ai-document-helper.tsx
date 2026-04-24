@@ -1,62 +1,73 @@
 import { useState } from "react";
 import { Sparkles, FileText, CheckCircle2, AlertCircle, Lightbulb, Loader2 } from "lucide-react";
+import apiClient from "../../api/client";
 
 interface AIDocumentHelperProps {
   documentType: "resume" | "cover-letter";
   hasDocument: boolean;
 }
 
+interface AnalysisResult {
+  score: number;
+  strengths: string[];
+  improvements: string[];
+  suggestions: string[];
+}
+
 export function AIDocumentHelper({ documentType, hasDocument }: AIDocumentHelperProps) {
   const [activeTab, setActiveTab] = useState<"review" | "generate">("review");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisComplete, setAnalysisComplete] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [analysisError, setAnalysisError] = useState("");
+
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generationComplete, setGenerationComplete] = useState(false);
+  const [generatedContent, setGeneratedContent] = useState("");
+  const [generateError, setGenerateError] = useState("");
 
-  const handleReview = () => {
-    setIsAnalyzing(true);
-    setAnalysisComplete(false);
-    
-    // Simulate AI analysis
-    setTimeout(() => {
-      setIsAnalyzing(false);
-      setAnalysisComplete(true);
-    }, 3000);
-  };
-
-  const handleGenerate = () => {
-    setIsGenerating(true);
-    setGenerationComplete(false);
-    
-    // Simulate AI generation
-    setTimeout(() => {
-      setIsGenerating(false);
-      setGenerationComplete(true);
-    }, 4000);
-  };
+  const [jobTitle, setJobTitle] = useState("");
+  const [industry, setIndustry] = useState("Technology");
+  const [experience, setExperience] = useState("Mid Level (3-5 years)");
+  const [company, setCompany] = useState("");
 
   const displayName = documentType === "resume" ? "Resume" : "Cover Letter";
 
-  // Mock analysis results
-  const analysisResults = {
-    score: 85,
-    strengths: [
-      "Clear and concise summary section",
-      "Quantifiable achievements highlighted",
-      "Relevant technical skills listed",
-      "Professional formatting and structure",
-    ],
-    improvements: [
-      "Add more action verbs to describe your responsibilities",
-      "Include specific metrics for project outcomes",
-      "Tailor keywords to match job descriptions",
-      "Consider adding a certification section",
-    ],
-    suggestions: [
-      "Optimize for ATS (Applicant Tracking Systems)",
-      "Update contact information format",
-      "Add LinkedIn profile URL",
-    ],
+  const handleReview = async () => {
+    setIsAnalyzing(true);
+    setAnalysisResult(null);
+    setAnalysisError("");
+    try {
+      const res = await apiClient.post("/ai/analyze/", { action: "analyze", doc_type: documentType });
+      setAnalysisResult(res.data);
+    } catch (err: any) {
+      setAnalysisError(err.response?.data?.error || "Analysis failed. Please try again.");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    setGeneratedContent("");
+    setGenerateError("");
+    try {
+      const res = await apiClient.post("/ai/analyze/", {
+        action: "generate",
+        doc_type: documentType,
+        job_title: jobTitle,
+        industry,
+        experience,
+        company,
+      });
+      setGeneratedContent(res.data.content);
+    } catch (err: any) {
+      setGenerateError(err.response?.data?.error || "Generation failed. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleCopyGenerated = () => {
+    navigator.clipboard.writeText(generatedContent);
   };
 
   return (
@@ -66,27 +77,20 @@ export function AIDocumentHelper({ documentType, hasDocument }: AIDocumentHelper
           <Sparkles className="w-5 h-5 text-white" />
         </div>
         <h3 className="text-xl font-semibold text-foreground">AI Assistant</h3>
+        <span className="ml-auto text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium">Powered by Claude</span>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6">
         <button
           onClick={() => setActiveTab("review")}
-          className={`flex-1 px-4 py-2.5 rounded-lg transition-all ${
-            activeTab === "review"
-              ? "bg-white shadow-sm text-foreground"
-              : "text-muted-foreground hover:bg-white/50"
-          }`}
+          className={`flex-1 px-4 py-2.5 rounded-lg transition-all ${activeTab === "review" ? "bg-white shadow-sm text-foreground" : "text-muted-foreground hover:bg-white/50"}`}
         >
           Review {displayName}
         </button>
         <button
           onClick={() => setActiveTab("generate")}
-          className={`flex-1 px-4 py-2.5 rounded-lg transition-all ${
-            activeTab === "generate"
-              ? "bg-white shadow-sm text-foreground"
-              : "text-muted-foreground hover:bg-white/50"
-          }`}
+          className={`flex-1 px-4 py-2.5 rounded-lg transition-all ${activeTab === "generate" ? "bg-white shadow-sm text-foreground" : "text-muted-foreground hover:bg-white/50"}`}
         >
           Generate {displayName}
         </button>
@@ -98,23 +102,23 @@ export function AIDocumentHelper({ documentType, hasDocument }: AIDocumentHelper
           {!hasDocument ? (
             <div className="bg-white rounded-lg p-6 text-center">
               <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground mb-4">
-                Upload your {displayName.toLowerCase()} first to get AI-powered feedback
-              </p>
+              <p className="text-muted-foreground">Upload your {displayName.toLowerCase()} first to get AI-powered feedback</p>
             </div>
           ) : (
             <>
-              {!analysisComplete && !isAnalyzing && (
+              {!analysisResult && !isAnalyzing && (
                 <div className="bg-white rounded-lg p-6">
+                  {analysisError && (
+                    <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg mb-4">{analysisError}</p>
+                  )}
                   <p className="text-muted-foreground mb-4">
-                    Get instant feedback on your {displayName.toLowerCase()} with our AI-powered analysis
+                    Get instant AI-powered feedback on your {displayName.toLowerCase()} using Claude
                   </p>
                   <button
                     onClick={handleReview}
                     className="w-full bg-gradient-to-r from-purple-500 to-blue-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all duration-300 hover:-translate-y-1 flex items-center justify-center gap-2"
                   >
-                    <Sparkles className="w-5 h-5" />
-                    Analyze {displayName}
+                    <Sparkles className="w-5 h-5" /> Analyze {displayName}
                   </button>
                 </div>
               )}
@@ -122,79 +126,73 @@ export function AIDocumentHelper({ documentType, hasDocument }: AIDocumentHelper
               {isAnalyzing && (
                 <div className="bg-white rounded-lg p-8 text-center">
                   <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
-                  <p className="font-medium text-foreground mb-2">Analyzing your {displayName.toLowerCase()}...</p>
-                  <p className="text-sm text-muted-foreground">
-                    Our AI is reviewing content, structure, and optimization
-                  </p>
+                  <p className="font-medium text-foreground mb-2">Claude is analyzing your {displayName.toLowerCase()}...</p>
+                  <p className="text-sm text-muted-foreground">Reviewing content, structure, and ATS optimization</p>
                 </div>
               )}
 
-              {analysisComplete && (
+              {analysisResult && (
                 <div className="space-y-4">
-                  {/* Score */}
                   <div className="bg-white rounded-lg p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h4 className="font-semibold text-foreground">Overall Score</h4>
-                      <div className="text-3xl font-bold text-primary">{analysisResults.score}%</div>
+                      <div className="text-3xl font-bold text-primary">{analysisResult.score}%</div>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3">
                       <div
                         className="bg-gradient-to-r from-purple-500 to-blue-600 h-3 rounded-full transition-all duration-1000"
-                        style={{ width: `${analysisResults.score}%` }}
+                        style={{ width: `${analysisResult.score}%` }}
                       />
                     </div>
                   </div>
 
-                  {/* Strengths */}
                   <div className="bg-white rounded-lg p-6">
                     <div className="flex items-center gap-2 mb-4">
                       <CheckCircle2 className="w-5 h-5 text-green-600" />
                       <h4 className="font-semibold text-foreground">Strengths</h4>
                     </div>
                     <ul className="space-y-2">
-                      {analysisResults.strengths.map((strength, index) => (
-                        <li key={index} className="flex items-start gap-2 text-sm">
+                      {analysisResult.strengths.map((s, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm">
                           <div className="w-1.5 h-1.5 rounded-full bg-green-600 mt-1.5 flex-shrink-0" />
-                          <span className="text-muted-foreground">{strength}</span>
+                          <span className="text-muted-foreground">{s}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
 
-                  {/* Improvements */}
                   <div className="bg-white rounded-lg p-6">
                     <div className="flex items-center gap-2 mb-4">
                       <AlertCircle className="w-5 h-5 text-amber-600" />
                       <h4 className="font-semibold text-foreground">Areas for Improvement</h4>
                     </div>
                     <ul className="space-y-2">
-                      {analysisResults.improvements.map((improvement, index) => (
-                        <li key={index} className="flex items-start gap-2 text-sm">
+                      {analysisResult.improvements.map((s, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm">
                           <div className="w-1.5 h-1.5 rounded-full bg-amber-600 mt-1.5 flex-shrink-0" />
-                          <span className="text-muted-foreground">{improvement}</span>
+                          <span className="text-muted-foreground">{s}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
 
-                  {/* Suggestions */}
                   <div className="bg-white rounded-lg p-6">
                     <div className="flex items-center gap-2 mb-4">
                       <Lightbulb className="w-5 h-5 text-blue-600" />
                       <h4 className="font-semibold text-foreground">Pro Tips</h4>
                     </div>
                     <ul className="space-y-2">
-                      {analysisResults.suggestions.map((suggestion, index) => (
-                        <li key={index} className="flex items-start gap-2 text-sm">
+                      {analysisResult.suggestions.map((s, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm">
                           <div className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 flex-shrink-0" />
-                          <span className="text-muted-foreground">{suggestion}</span>
+                          <span className="text-muted-foreground">{s}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
 
                   <button
-                    onClick={handleReview}
+                    onClick={() => setAnalysisResult(null)}
                     className="w-full bg-white text-primary border-2 border-primary px-6 py-3 rounded-lg hover:bg-accent transition-all flex items-center justify-center gap-2"
                   >
                     Re-analyze {displayName}
@@ -209,29 +207,32 @@ export function AIDocumentHelper({ documentType, hasDocument }: AIDocumentHelper
       {/* Generate Tab */}
       {activeTab === "generate" && (
         <div className="space-y-4">
-          {!isGenerating && !generationComplete && (
+          {!generatedContent && !isGenerating && (
             <div className="bg-white rounded-lg p-6 space-y-4">
+              {generateError && (
+                <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{generateError}</p>
+              )}
               <p className="text-muted-foreground">
-                Let AI create a professional {displayName.toLowerCase()} tailored to your career goals
+                Let Claude create a professional {displayName.toLowerCase()} tailored to your career goals
               </p>
-              
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Job Title
-                  </label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Job Title</label>
                   <input
                     type="text"
+                    value={jobTitle}
+                    onChange={(e) => setJobTitle(e.target.value)}
                     placeholder="e.g., Senior Frontend Developer"
                     className="w-full px-4 py-2 bg-muted rounded-lg border border-input focus:outline-none focus:ring-2 focus:ring-primary transition-all"
                   />
                 </div>
-                
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Industry
-                  </label>
-                  <select className="w-full px-4 py-2 bg-muted rounded-lg border border-input focus:outline-none focus:ring-2 focus:ring-primary transition-all">
+                  <label className="block text-sm font-medium text-foreground mb-2">Industry</label>
+                  <select
+                    value={industry}
+                    onChange={(e) => setIndustry(e.target.value)}
+                    className="w-full px-4 py-2 bg-muted rounded-lg border border-input focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                  >
                     <option>Technology</option>
                     <option>Healthcare</option>
                     <option>Finance</option>
@@ -240,39 +241,38 @@ export function AIDocumentHelper({ documentType, hasDocument }: AIDocumentHelper
                     <option>Other</option>
                   </select>
                 </div>
-                
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Years of Experience
-                  </label>
-                  <select className="w-full px-4 py-2 bg-muted rounded-lg border border-input focus:outline-none focus:ring-2 focus:ring-primary transition-all">
+                  <label className="block text-sm font-medium text-foreground mb-2">Years of Experience</label>
+                  <select
+                    value={experience}
+                    onChange={(e) => setExperience(e.target.value)}
+                    className="w-full px-4 py-2 bg-muted rounded-lg border border-input focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                  >
                     <option>Entry Level (0-2 years)</option>
                     <option>Mid Level (3-5 years)</option>
                     <option>Senior (6-10 years)</option>
                     <option>Expert (10+ years)</option>
                   </select>
                 </div>
-
                 {documentType === "cover-letter" && (
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Company Name
-                    </label>
+                    <label className="block text-sm font-medium text-foreground mb-2">Company Name</label>
                     <input
                       type="text"
+                      value={company}
+                      onChange={(e) => setCompany(e.target.value)}
                       placeholder="e.g., TechCorp Inc."
                       className="w-full px-4 py-2 bg-muted rounded-lg border border-input focus:outline-none focus:ring-2 focus:ring-primary transition-all"
                     />
                   </div>
                 )}
               </div>
-
               <button
                 onClick={handleGenerate}
-                className="w-full bg-gradient-to-r from-purple-500 to-blue-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all duration-300 hover:-translate-y-1 flex items-center justify-center gap-2"
+                disabled={!jobTitle.trim()}
+                className="w-full bg-gradient-to-r from-purple-500 to-blue-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all duration-300 hover:-translate-y-1 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0"
               >
-                <Sparkles className="w-5 h-5" />
-                Generate with AI
+                <Sparkles className="w-5 h-5" /> Generate with Claude AI
               </button>
             </div>
           )}
@@ -280,35 +280,32 @@ export function AIDocumentHelper({ documentType, hasDocument }: AIDocumentHelper
           {isGenerating && (
             <div className="bg-white rounded-lg p-8 text-center">
               <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
-              <p className="font-medium text-foreground mb-2">Generating your {displayName.toLowerCase()}...</p>
-              <p className="text-sm text-muted-foreground">
-                AI is crafting a professional document based on your input
-              </p>
+              <p className="font-medium text-foreground mb-2">Claude is writing your {displayName.toLowerCase()}...</p>
+              <p className="text-sm text-muted-foreground">Crafting a professional document based on your details</p>
             </div>
           )}
 
-          {generationComplete && (
+          {generatedContent && (
             <div className="space-y-4">
               <div className="bg-white rounded-lg p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <CheckCircle2 className="w-6 h-6 text-green-600" />
-                  <h4 className="font-semibold text-foreground">Document Generated!</h4>
-                </div>
-                <p className="text-muted-foreground mb-4">
-                  Your AI-generated {displayName.toLowerCase()} is ready for download and review.
-                </p>
-                <div className="flex gap-3">
-                  <button className="flex-1 bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
-                    Download Document
-                  </button>
-                  <button className="flex-1 bg-white text-primary border-2 border-primary px-6 py-3 rounded-lg hover:bg-accent transition-colors">
-                    Preview
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-6 h-6 text-green-600" />
+                    <h4 className="font-semibold text-foreground">{displayName} Generated!</h4>
+                  </div>
+                  <button
+                    onClick={handleCopyGenerated}
+                    className="text-xs text-primary hover:text-blue-700 border border-primary px-3 py-1 rounded-lg transition-colors"
+                  >
+                    Copy
                   </button>
                 </div>
+                <pre className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto bg-muted p-4 rounded-lg">
+                  {generatedContent}
+                </pre>
               </div>
-
               <button
-                onClick={() => setGenerationComplete(false)}
+                onClick={() => setGeneratedContent("")}
                 className="w-full text-primary hover:text-blue-700 transition-colors"
               >
                 Generate Another
