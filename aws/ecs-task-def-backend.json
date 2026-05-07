@@ -1,0 +1,51 @@
+{
+  "family": "careerflow-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "backend",
+      "image": "ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/careerflow-backend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "DEBUG", "value": "False" },
+        { "name": "DATABASE_PORT", "value": "5432" }
+      ],
+      "secrets": [
+        { "name": "SECRET_KEY",          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:careerflow/SECRET_KEY" },
+        { "name": "DATABASE_NAME",       "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:careerflow/DATABASE_NAME" },
+        { "name": "DATABASE_USER",       "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:careerflow/DATABASE_USER" },
+        { "name": "DATABASE_PASSWORD",   "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:careerflow/DATABASE_PASSWORD" },
+        { "name": "DATABASE_HOST",       "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:careerflow/DATABASE_HOST" },
+        { "name": "ALLOWED_HOSTS",       "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:careerflow/ALLOWED_HOSTS" },
+        { "name": "CORS_ALLOWED_ORIGINS","valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:careerflow/CORS_ALLOWED_ORIGINS" },
+        { "name": "GEMINI_API_KEY",      "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:careerflow/GEMINI_API_KEY" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/careerflow-backend",
+          "awslogs-region": "REGION",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:8000/api/health/ || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ]
+}
