@@ -66,7 +66,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database — use PostgreSQL when DATABASE_HOST is set, else SQLite for local dev
 if os.environ.get('DATABASE_HOST'):
-    _db_options = {}
+    _db_options = {'connect_timeout': 10}
     if os.environ.get('DATABASE_SSLMODE'):
         _db_options['sslmode'] = os.environ['DATABASE_SSLMODE']
     DATABASES = {
