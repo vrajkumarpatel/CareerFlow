@@ -22,3 +22,18 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Django
+backend/.env
+backend/db.sqlite3
+backend/media/
+backend/staticfiles/
+
+# Vercel
+.vercel/
