@@ -77,7 +77,7 @@ export function AIDocumentHelper({ documentType, hasDocument }: AIDocumentHelper
           <Sparkles className="w-5 h-5 text-white" />
         </div>
         <h3 className="text-xl font-semibold text-foreground">AI Assistant</h3>
-        <span className="ml-auto text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium">Powered by Claude</span>
+        <span className="ml-auto text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium">Powered by Gemini</span>
       </div>
 
       {/* Tabs */}
@@ -112,7 +112,7 @@ export function AIDocumentHelper({ documentType, hasDocument }: AIDocumentHelper
                     <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg mb-4">{analysisError}</p>
                   )}
                   <p className="text-muted-foreground mb-4">
-                    Get instant AI-powered feedback on your {displayName.toLowerCase()} using Claude
+                    Get instant AI-powered feedback on your {displayName.toLowerCase()} using Gemini
                   </p>
                   <button
                     onClick={handleReview}
@@ -126,7 +126,7 @@ export function AIDocumentHelper({ documentType, hasDocument }: AIDocumentHelper
               {isAnalyzing && (
                 <div className="bg-white rounded-lg p-8 text-center">
                   <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
-                  <p className="font-medium text-foreground mb-2">Claude is analyzing your {displayName.toLowerCase()}...</p>
+                  <p className="font-medium text-foreground mb-2">Gemini is analyzing your {displayName.toLowerCase()}...</p>
                   <p className="text-sm text-muted-foreground">Reviewing content, structure, and ATS optimization</p>
                 </div>
               )}
@@ -213,7 +213,7 @@ export function AIDocumentHelper({ documentType, hasDocument }: AIDocumentHelper
                 <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{generateError}</p>
               )}
               <p className="text-muted-foreground">
-                Let Claude create a professional {displayName.toLowerCase()} tailored to your career goals
+                Let Gemini create a professional {displayName.toLowerCase()} tailored to your career goals
               </p>
               <div className="space-y-3">
                 <div>
@@ -272,7 +272,7 @@ export function AIDocumentHelper({ documentType, hasDocument }: AIDocumentHelper
                 disabled={!jobTitle.trim()}
                 className="w-full bg-gradient-to-r from-purple-500 to-blue-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all duration-300 hover:-translate-y-1 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0"
               >
-                <Sparkles className="w-5 h-5" /> Generate with Claude AI
+                <Sparkles className="w-5 h-5" /> Generate with Gemini AI
               </button>
             </div>
           )}
@@ -280,7 +280,7 @@ export function AIDocumentHelper({ documentType, hasDocument }: AIDocumentHelper
           {isGenerating && (
             <div className="bg-white rounded-lg p-8 text-center">
               <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
-              <p className="font-medium text-foreground mb-2">Claude is writing your {displayName.toLowerCase()}...</p>
+              <p className="font-medium text-foreground mb-2">Gemini is writing your {displayName.toLowerCase()}...</p>
               <p className="text-sm text-muted-foreground">Crafting a professional document based on your details</p>
             </div>
           )}
