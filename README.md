@@ -65,7 +65,7 @@ Request flow: the SPA calls the Django REST API over HTTPS, attaching a JWT bear
 - **Database:** Supabase (managed PostgreSQL)
 - **Backend hosting:** Render (`render.yaml`, free-tier web service)
 - **Frontend hosting:** Vercel
-- An AWS ECS deployment path (task definitions still present under `aws/`) was explored and abandoned in the same session in favor of Render — it was never live.
+- **AWS ECS** — a full deployment path was built (task definitions for both services still live under `aws/`, plus a GitHub Actions deploy workflow) before the team moved to Render for the free tier. The ECS configuration itself is real, working infrastructure-as-code; it just isn't what's currently serving traffic.
 
 ## How It Works
 
