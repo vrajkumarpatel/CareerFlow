@@ -24,6 +24,8 @@ from .serializers import (
     JobApplicationSerializer, UserDocumentSerializer, UserSerializer,
 )
 
+\
+
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
