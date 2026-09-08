@@ -2,6 +2,17 @@
 
 A full-stack job search platform — job posting management, saved jobs, application tracking, and AI-assisted resume/cover-letter review — built with a Django REST Framework API and a React + TypeScript frontend.
 
+## Screenshots
+
+![Job listings](docs/screenshots/job-listings.png)
+*Core workflow: browsing and filtering open positions across companies, with search and location/type/experience filters.*
+
+![Admin dashboard](docs/screenshots/admin-dashboard.png)
+*Real Django ORM aggregation — platform-wide job, company, and user stats, not mocked data.*
+
+![AI document manager](docs/screenshots/ai-document-manager.png)
+*Resume/cover-letter upload feeding the AI review and generation feature, powered by Gemini.*
+
 ## Problem
 
 Job searching is fragmented across job boards, spreadsheets, and email threads. There's no single place to browse postings, track what you've applied to, and get feedback on your resume against a specific role — so candidates lose track of applications and get no structured feedback on their materials before hitting submit.
