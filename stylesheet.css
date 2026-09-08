@@ -1,0 +1,17 @@
+:root {
+    --royal-blue: #2563EB;
+    --emerald: #10B981;
+    --off-white: #F8FAFC;
+    --slate-gray: #1E293B;
+}
+
+.title-main {
+    color: var(--royal-blue); 
+    font-size: 2.5rem;      
+    font-weight: bold;
+}
+
+.title-sub {
+	color: var(--off-white);
+}
+

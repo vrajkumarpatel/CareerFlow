@@ -20,7 +20,12 @@ export function Signup() {
       return;
     }
     try {
-      const response = await apiClient.post("/auth/register/", { username, password });
+      const response = await apiClient.post("/auth/register/", {
+        username,
+        password,
+        first_name: fullName,
+        email,
+      });
       console.log("Signup success:", response.data);
       navigate("/login");
     } catch (err: any) {
